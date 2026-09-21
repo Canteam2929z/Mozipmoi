@@ -1,0 +1,61 @@
+name: Build UnzipDylib
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        shell: bash
+        run: |
+          set -euo pipefail
+          export THEOS="$HOME/theos"
+          git clone --depth=1 --recursive https://github.com/theos/theos.git "$THEOS"
+          git clone --depth=1 https://github.com/theos/sdks.git "$THEOS/sdks"
+          echo "THEOS=$THEOS" >> "$GITHUB_ENV"
+          echo "$THEOS/bin" >> "$GITHUB_PATH"
+
+      - name: Show build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "THEOS=$THEOS"
+          xcodebuild -version
+          make --version | head -1
+          test -f Makefile
+
+      - name: Build dylib
+        shell: bash
+        run: |
+          set -euo pipefail
+          make clean || true
+          make FINALPACKAGE=0
+
+      - name: Find build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Built dylib files:"
+          find .theos -type f -name '*.dylib' -print
+          count=$(find .theos -type f -name '*.dylib' | wc -l | tr -d ' ')
+          if [ "$count" -eq 0 ]; then
+            echo "ERROR: No .dylib was produced."
+            exit 1
+          fi
+          mkdir -p artifacts
+          find .theos -type f -name '*.dylib' -exec cp {} artifacts/ \;
+          ls -lh artifacts
+
+      - name: Upload dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: UnzipDylib-dylib
+          path: artifacts/*.dylib
+          if-no-files-found: error

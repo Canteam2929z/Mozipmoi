@@ -1,0 +1,9 @@
+Package: com.user.unzipdylib
+Name: UnzipDylib
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Dylib tu giai file .zip trong bundle ra Documents
+Maintainer: user
+Author: user
+Section: Tweaks
